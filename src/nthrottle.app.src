@@ -1,0 +1,8 @@
+{application, nthrottle, [
+    {description, "Throttling system based on ETS"},
+    {vsn, "1.0.0"},
+    {registered, [nthrottle_srv, nthrottle_sup]},
+    {applications, [kernel, stdlib]},
+    {mod, {nthrottle, []}},
+    {env, []}
+]}.
