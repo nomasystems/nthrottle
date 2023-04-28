@@ -6,49 +6,46 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  REBAR3-VERSION: 3.20.0
+
 jobs:
-  test:
+  check:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        include:
-          - image: erlang:24
-          - image: erlang:25
-    runs-on: ubuntu-latest
-    container:
-      image: ${{ matrix.image }}
-      options: "--entrypoint /bin/bash"
+        otp: ['25.2.3', '24.3']
     steps:
-      # Setup
-      - name: Checkout
-        uses: actions/checkout@v2
-      - uses: nomasystems/ssh-agent@v0.5.3
+      - uses: actions/checkout@v3
+
+      - uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      # Inspect rebar3 version
-      - name: Rebar version
-        run: rebar3 --version
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ matrix.otp }}
+          rebar3-version: ${{ env.REBAR3-VERSION }}
 
-      # PRE Checks
-      - name: Checks
-        run: rebar3 check
+      - uses: actions/cache@v3.2.6
+        id: rebar3-cache
+        with:
+          path: |
+            ~/.cache/rebar3
+            _build
+          key: ${{ runner.os }}-${{ matrix.otp }}-${{ env.REBAR3-VERSION }}-${{ hashFiles('rebar.lock') }}
 
-      # Compile
       - name: Compile
-        run: rebar3 compile
+        run: |
+          rebar3 clean
+          rebar3 compile
 
-      # Tests
-      - name: Run tests
-        run: rebar3 ci_test
-      - name: Store test logs
-        uses: actions/upload-artifact@v1
+      - run: rebar3 check
+
+      - run: rebar3 test
+
+      - name: Create test summary
+        uses: test-summary/action@v1
         if: always()
         with:
-          name: ct-logs
-          path: _build/test/logs
-
-      # Publish test report
-      - name: Publish Test Report
-        uses: nomasystems/action-junit-report@v2
-        with:
-          report_paths: '_build/test/logs/**/report.xml'
+          paths: '_build/test/logs/**/report.xml'
