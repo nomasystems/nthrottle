@@ -20,6 +20,9 @@
 %%% API EXPORTS
 -export([rps/1, rps/2, start_throttling/2, stop_throttling/1, throttle/1, throttle/2]).
 
+%%% TYPE EXPORTS
+-export_type([rps/0, subscription/0]).
+
 %%%-----------------------------------------------------------------------------
 %%% START/STOP EXPORTS
 %%%-----------------------------------------------------------------------------
